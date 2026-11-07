@@ -11140,6 +11140,31 @@ mod tests {
         assert!(!listing.media.is_empty(), "the group's photo");
     }
 
+    #[test]
+    fn contact_info_actions_use_the_interface_language_and_keep_their_actions() {
+        use egui::accesskit::Role;
+
+        let mut app = app();
+        app.locale = crate::i18n::Locale::PortugueseBrazil;
+        apply_flags(&mut app, Some("info"));
+        let ctx = egui::Context::default();
+        ctx.enable_accesskit();
+        app.attach(&ctx);
+
+        let labels = accessible_labels(&mut app, &ctx);
+        for expected in ["Conversar", "Copiar número", "Silenciar"] {
+            assert!(labels.iter().any(|label| label == expected), "{labels:?}");
+        }
+
+        press_labelled(&mut app, &ctx, "Silenciar", Role::Button);
+        assert_eq!(app.chat(SAMPLES[0].id).unwrap().muted_until, Some(0));
+        let labels = accessible_labels(&mut app, &ctx);
+        assert!(
+            labels.iter().any(|label| label == "Ativar som"),
+            "{labels:?}"
+        );
+    }
+
     /// The info panel's header ends where the chat header beside it ends, so
     /// their edges meet in one line (#639), in the plain themes and the
     /// vibrant ones.

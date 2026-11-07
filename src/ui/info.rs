@@ -5,10 +5,13 @@
 //! room, the list steps aside. In the narrow window mode it is a page of its
 //! own over the chat, with Back.
 
+use std::borrow::Cow;
+
 use egui::{Align, Align2, Color32, CornerRadius, Frame, Margin, Rect, Sense, Stroke, Vec2};
 use egui::{pos2, vec2};
 
 use crate::app::{App, InfoFocus};
+use crate::i18n::gettext;
 use crate::model::{Action, ChatMedia, Content, Dialog, InfoView, MediaTab, Message};
 use crate::theme::{self, Icon};
 
@@ -795,11 +798,11 @@ fn identity(app: &mut App, ui: &mut egui::Ui, shown: &Shown, overlay: bool) {
 fn actions(app: &mut App, ui: &mut egui::Ui, shown: &Shown, mine: bool, editable: bool) {
     let palette = app.palette;
     let id = shown.id.as_str();
-    let mut buttons: Vec<(Icon, &str, Vec<Action>)> = Vec::new();
+    let mut buttons: Vec<(Icon, Cow<'static, str>, Vec<Action>)> = Vec::new();
     if !shown.group && !mine {
         buttons.push((
             Icon::MessageCircle,
-            "Message",
+            gettext(app.locale, "Message"),
             vec![
                 Action::StartChat {
                     id: id.to_owned(),
@@ -819,7 +822,11 @@ fn actions(app: &mut App, ui: &mut egui::Ui, shown: &Shown, mine: bool, editable
             .is_some_and(|full| !full.is_empty());
         buttons.push((
             Icon::User,
-            if known { "Rename" } else { "Add to contacts" },
+            if known {
+                gettext(app.locale, "Rename")
+            } else {
+                gettext(app.locale, "Add to contacts")
+            },
             vec![Action::EditContact {
                 id: id.to_owned(),
                 name: shown.name.trim_start_matches('~').to_owned(),
@@ -829,7 +836,7 @@ fn actions(app: &mut App, ui: &mut egui::Ui, shown: &Shown, mine: bool, editable
     if let Some(phone) = &shown.phone {
         buttons.push((
             Icon::Copy,
-            "Copy number",
+            gettext(app.locale, "Copy number"),
             vec![Action::CopyText(format!("+{phone}"))],
         ));
     }
@@ -837,13 +844,13 @@ fn actions(app: &mut App, ui: &mut egui::Ui, shown: &Shown, mine: bool, editable
         buttons.push(if shown.muted {
             (
                 Icon::Bell,
-                "Unmute",
+                gettext(app.locale, "Unmute"),
                 vec![Action::SetMuted(id.to_owned(), None)],
             )
         } else {
             (
                 Icon::BellOff,
-                "Mute",
+                gettext(app.locale, "Mute"),
                 vec![Action::SetMuted(id.to_owned(), Some(0))],
             )
         });
@@ -853,15 +860,19 @@ fn actions(app: &mut App, ui: &mut egui::Ui, shown: &Shown, mine: bool, editable
             } else {
                 Icon::Pin
             },
-            if shown.pinned { "Unpin" } else { "Pin" },
+            if shown.pinned {
+                gettext(app.locale, "Unpin")
+            } else {
+                gettext(app.locale, "Pin")
+            },
             vec![Action::SetPinned(id.to_owned(), !shown.pinned)],
         ));
         buttons.push((
             Icon::Archive,
             if shown.archived {
-                "Unarchive"
+                gettext(app.locale, "Unarchive")
             } else {
-                "Archive"
+                gettext(app.locale, "Archive")
             },
             vec![
                 Action::SetArchived(id.to_owned(), !shown.archived),
@@ -878,7 +889,7 @@ fn actions(app: &mut App, ui: &mut egui::Ui, shown: &Shown, mine: bool, editable
         let mut end = start;
         let mut total = 0.0;
         while end < buttons.len() {
-            let width = theme::soft_button_width(ui, buttons[end].1, true);
+            let width = theme::soft_button_width(ui, buttons[end].1.as_ref(), true);
             let grown = if end == start {
                 width
             } else {
